@@ -27,6 +27,12 @@
 
 use std::path::PathBuf;
 
+#[cfg(feature = "camino")]
+extern crate camino;
+
+#[cfg(feature = "camino")]
+use camino::Utf8PathBuf;
+
 /// The Clean trait implements a `clean` method. It's recommended you use the provided [`clean`]
 /// function.
 pub trait PathClean<T> {
@@ -37,6 +43,14 @@ pub trait PathClean<T> {
 impl PathClean<PathBuf> for PathBuf {
     fn clean(&self) -> PathBuf {
         PathBuf::from(clean(self.to_str().unwrap_or("")))
+    }
+}
+
+/// PathClean implemented for Utf8PathBuf
+#[cfg(feature = "camino")]
+impl PathClean<Utf8PathBuf> for Utf8PathBuf {
+    fn clean(&self) -> Utf8PathBuf {
+        Utf8PathBuf::from(clean(self.as_str()))
     }
 }
 
@@ -132,6 +146,8 @@ fn clean_internal(path: &[u8]) -> Vec<u8> {
 mod tests {
     use super::{clean, PathClean};
     use std::path::PathBuf;
+    #[cfg(feature = "camino")]
+    use camino::Utf8PathBuf;
 
     #[test]
     fn test_empty_path_is_current_dir() {
@@ -216,6 +232,15 @@ mod tests {
         assert_eq!(
             PathBuf::from("/test/../path/").clean(),
             PathBuf::from("/path")
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "camino")]
+    fn test_utf8pathbuf_trait() {
+        assert_eq!(
+            Utf8PathBuf::from("/test/../path/").clean(),
+            Utf8PathBuf::from("/path")
         );
     }
 }
